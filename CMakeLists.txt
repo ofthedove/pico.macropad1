@@ -22,6 +22,7 @@ pico_sdk_init()
 add_executable(
         MacroPad1 MacroPad1.c
         Encoder Encoder.c
+        Heartbeat Heartbeat.c
         )
 
 pico_set_program_name(MacroPad1 "MacroPad1")
