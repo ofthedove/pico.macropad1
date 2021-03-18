@@ -11,6 +11,7 @@
 #include "util.h"
 #include "Encoder.h"
 #include "Heartbeat.h"
+#include "RgbLed.h"
 
 // UART defines
 // By default the stdout UART is `uart0`, so we will use the second one
@@ -84,6 +85,9 @@ int main()
 
    Heartbeat_t heartbeat;
    Heartbeat_Init(&heartbeat, BuiltinLed);
+
+   RgbLed_t rgbLed;
+   RgbLed_Init(&rgbLed, 5, 6, 7);
 
    Encoder_t encoder;
    Encoder_Init(
