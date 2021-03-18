@@ -9,4 +9,6 @@ enum
 
 #define REINTERPRET(newType, newName, oldName) newType newName = (newType)oldName;
 
+#define IGNORE(arg) (void)arg;
+
 #endif

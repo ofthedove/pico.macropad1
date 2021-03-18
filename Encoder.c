@@ -5,9 +5,17 @@
 
 enum
 {
-   PollRateMs = 50,
+   PollRateMs = 5,
    BufferSize = 10,
+
+   Pressed = false,
 };
+
+const short int EncoderArray[4][4] =
+  {{ 0, 1,-1, 0 },
+   {-1, 0, 0, 1 },
+   { 1, 0, 0,-1 },
+   { 0,-1, 1, 0 }};
 
 static void hardwareInit(Encoder_t *instance) {
    gpio_init(instance->dtPin);
@@ -34,11 +42,24 @@ static bool poll(repeating_timer_t *rt) {
    return ContinueTimer;
 }
 
-void Encoder_Init(Encoder_t *instance, uint dt, uint clk, uint sw)
+void Encoder_Init(
+   Encoder_t *instance,
+   uint dtPin,
+   uint clkPin,
+   uint swPin,
+   Encoder_Callback_t rotateCallback,
+   void *rotateContext,
+   Encoder_Callback_t buttonCallback,
+   void *buttonContext)
 {
-   instance->dtPin = dt;
-   instance->clkPin = clk;
-   instance->swPin = sw;
+   instance->dtPin = dtPin;
+   instance->clkPin = clkPin;
+   instance->swPin = swPin;
+
+   instance->rotateCallback = rotateCallback;
+   instance->rotateContext = rotateContext;
+   instance->buttonCallback = buttonCallback;
+   instance->buttonContext = buttonContext;
 
    hardwareInit(instance);
 
@@ -58,8 +79,33 @@ void Encoder_Run(Encoder_t *instance)
       Encoder_InputState_t state;
       queue_try_remove(&instance->pollQueue, &state);
 
-      // Compare to previous state
-      // fire events as applicable
+      if(instance->previousState.dt != state.dt || instance->previousState.clk != state.clk)
+      {
+         uint8_t previousEncoder = (instance->previousState.dt << 1) + instance->previousState.clk;
+         uint8_t currentEncoder = (state.dt << 1) + state.clk;
+
+         uint8_t encoderChange = EncoderArray[previousEncoder][currentEncoder];
+
+         if(encoderChange != 0)
+         {
+            Encoder_Event_t event = encoderChange == 1 ? Encoder_Event_RotateCW : Encoder_Event_RotateCCW;
+
+            if(instance->rotateCallback != NULL)
+            {
+               instance->rotateCallback(instance->rotateContext, event);
+            }
+         }
+      }
+
+      if(instance->previousState.sw != state.sw)
+      {
+         Encoder_Event_t event = (state.sw == Pressed ? Encoder_Event_ButtonPress : Encoder_Event_ButtonRelease);
+
+         if(instance->buttonCallback != NULL)
+         {
+            instance->buttonCallback(instance->buttonContext, event);
+         }
+      }
 
       instance->previousState.dt = state.dt;
       instance->previousState.clk = state.clk;

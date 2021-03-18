@@ -8,6 +8,7 @@
 #include "hardware/timer.h"
 #include "hardware/clocks.h"
 
+#include "util.h"
 #include "Encoder.h"
 
 // UART defines
@@ -55,6 +56,31 @@ bool timer_callback(repeating_timer_t *rt) {
 //     return 0;
 // }
 
+static void encoderRotateCallback(void *context, Encoder_Event_t event)
+{
+   IGNORE(context);
+
+   if(event == Encoder_Event_RotateCW) {
+      uart_puts(UART_ID, "Encoder Rotate CW\r\n");
+   } else if (event == Encoder_Event_RotateCCW) {
+      uart_puts(UART_ID, "Encoder Rotate CCW\r\n");
+   } else {
+      uart_puts(UART_ID, "Unknown Rotate Event!\r\n");
+   }
+}
+
+static void encoderButtonCallback(void *context, Encoder_Event_t event)
+{
+   IGNORE(context);
+   
+   if(event == Encoder_Event_ButtonPress) {
+      uart_puts(UART_ID, "Encoder Button Press\r\n");
+   } else if (event == Encoder_Event_ButtonRelease) {
+      uart_puts(UART_ID, "Encoder Button Release\r\n");
+   } else {
+      uart_puts(UART_ID, "Unknown Button Event!\r\n");
+   }
+}
 
 
 int main()
@@ -107,14 +133,27 @@ int main()
    repeating_timer_t timer;
    if(!add_repeating_timer_ms(500, timer_callback, NULL, &timer)) {
       (void) timer_callback;
-      uart_puts(UART_ID, "Failed to add timer\n");
+      uart_puts(UART_ID, "Failed to add timer\r\n");
    }
    // add_alarm_in_ms(500, alarm_callback, NULL, false);
 
 
-   uart_puts(UART_ID, "Hello, world!\n");
+   uart_puts(UART_ID, "Hello, world!\r\n");
+
+
+   Encoder_t encoder;
+   Encoder_Init(
+      &encoder,
+      3,
+      4,
+      2,
+      encoderRotateCallback,
+      NULL,
+      encoderButtonCallback,
+      NULL);
 
    while(true) {
+      Encoder_Run(&encoder);
    }
 
    return 0;
