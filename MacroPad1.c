@@ -34,9 +34,19 @@ enum {
    BuiltinLed = PICO_DEFAULT_LED_PIN,
 };
 
+RgbLed_t rgbLed;
+
 static void encoderRotateCallback(void *context, Encoder_Event_t event)
 {
    IGNORE(context);
+
+   // skip every other call b/c encoder counts two counts per click
+   static bool toggle;
+   toggle = !toggle;
+   if(toggle)
+   {
+      return;
+   }
 
    if(event == Encoder_Event_RotateCW) {
       uart_puts(UART_ID, "Encoder Rotate CW\r\n");
@@ -45,6 +55,24 @@ static void encoderRotateCallback(void *context, Encoder_Event_t event)
    } else {
       uart_puts(UART_ID, "Unknown Rotate Event!\r\n");
    }
+
+   static uint8_t index = 0;
+
+   switch(index)
+   {
+      case 0:
+         RgbLed_Write(&rgbLed, (RgbColor_t){255, 0, 0});
+         break;
+      case 1:
+         RgbLed_Write(&rgbLed, (RgbColor_t){0, 255, 0});
+         break;
+      default:
+         RgbLed_Write(&rgbLed, (RgbColor_t){0, 0, 255});
+         break;
+   }
+
+   index++;
+   index %= 3;
 }
 
 static void encoderButtonCallback(void *context, Encoder_Event_t event)
@@ -59,7 +87,6 @@ static void encoderButtonCallback(void *context, Encoder_Event_t event)
       uart_puts(UART_ID, "Unknown Button Event!\r\n");
    }
 }
-
 
 int main()
 {
@@ -86,7 +113,6 @@ int main()
    Heartbeat_t heartbeat;
    Heartbeat_Init(&heartbeat, BuiltinLed);
 
-   RgbLed_t rgbLed;
    RgbLed_Init(&rgbLed, 5, 6, 7);
 
    Encoder_t encoder;

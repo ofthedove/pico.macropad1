@@ -12,7 +12,7 @@ typedef struct
 
 typedef struct
 {
-   uint8_t hue;
+   uint16_t hue;
    uint8_t saturation;
    uint8_t value;
 } HsvColor_t;

@@ -1,123 +1,121 @@
 #include "util.h"
 #include "Color.h"
 
+// Math based on this: https://stackoverflow.com/questions/3018313/algorithm-to-convert-rgb-to-hsv-and-hsv-to-rgb-in-range-0-255-for-both
+
+enum
+{
+   HueMax = 360,
+   RegionSize = 60,
+   NumRegions = 6,
+};
+
 HsvColor_t ColorRgbToHsv(RgbColor_t rgbIn)
 {
    HsvColor_t hsvOut;
 
-   double min = MIN(MIN(rgbIn.red, rgbIn.green), rgbIn.blue);
-   double max = MAX(MAX(rgbIn.red, rgbIn.green), rgbIn.blue);
-   double delta = max - min;
+   uint8_t min = MIN(MIN(rgbIn.red, rgbIn.green), rgbIn.blue);
+   uint8_t max = MAX(MAX(rgbIn.red, rgbIn.green), rgbIn.blue);
+   uint8_t delta = max - min;
 
    hsvOut.value = max;
 
-   if(delta < 0.00001)
+   if(max == 0 || delta == 0)
    {
       hsvOut.saturation = 0;
       hsvOut.hue = 0; // undefined
       return hsvOut;
    }
 
-   if(max > 0.0)
-   {
-      // NOTE: if Max is == 0, this divide would cause a crash
-      hsvOut.saturation = (delta / max);
-   }
-   else
-   {
-      // if max is 0, then r = g = b = 0 => s = 0, h is undefined
-      hsvOut.saturation = 0.0;
-      hsvOut.hue = 0; // undefined
-      return hsvOut;
-   }
+   uint16_t temp = (uint16_t)255 * (uint16_t)delta;
+   temp = temp / (uint16_t)max;
+   hsvOut.saturation = (uint8_t)temp;
 
-   double hue;
-   if(rgbIn.red >= max) // > is bogus, just keeps compilor happy
+   if(rgbIn.red == max)
    { // between yellow & magenta
-      hue = ( rgbIn.green - rgbIn.blue ) / delta;
+      int16_t temp;
+      temp = (int16_t)rgbIn.green - (int16_t)rgbIn.blue;
+      temp = temp / (int16_t)delta;
+      temp = temp * RegionSize;
+      hsvOut.hue = (0 * RegionSize) + temp;
    }
-   else if(rgbIn.green >= max)
+   else if(rgbIn.green == max)
    { // between cyan & yellow
-      hue = 2.0 + (rgbIn.blue - rgbIn.red) / delta;
+      int16_t temp;
+      temp = (int16_t)rgbIn.blue - (int16_t)rgbIn.red;
+      temp = temp / (int16_t)delta;
+      temp = temp * RegionSize;
+      hsvOut.hue = (2 * RegionSize) + temp;
    }
    else
    { // between magenta & cyan
-      hue = 4.0 + (rgbIn.red - rgbIn.green) / delta;
+      int16_t temp;
+      temp = (int16_t)rgbIn.red - (int16_t)rgbIn.green;
+      temp = temp / (int16_t)delta;
+      temp = temp * RegionSize;
+      hsvOut.hue = (4 * RegionSize) + temp;
    }
-
-   hue *= 60.0; // degrees
-
-   if(hue < 0.0)
-   {
-      hue += 360.0;
-   }
-
-   hsvOut.hue = (uint8_t)hue;
 
    return hsvOut;
 }
 
-RgbColor_t ColorHsvToRgb(HsvColor_t hsvColor)
+RgbColor_t ColorHsvToRgb(HsvColor_t hsvIn)
 {
+   RgbColor_t rgbOut;
 
+   if(hsvIn.saturation == 0)
+   {
+      rgbOut.red = hsvIn.value;
+      rgbOut.green = hsvIn.value;
+      rgbOut.blue = hsvIn.value
+      return rgbOut;
+   }
+
+   uint16_t hue = hsvIn.hue;
+   hue %= HueMax;
+   uint8_t region = hue / RegionSize;
+   uint16_t remainder = (hsvIn.hue - (region * regionSize)) * NumRegions;
+
+   uint16_t value = (uint16_t)hsvIn.value;
+   uint16_t saturation = (uint16_t)hsvIn.saturation;
+
+   uint8_t p = (value * (255 - saturation)) >> 8;
+   uint8_t q = (value * (255 - ((saturation * remainder) >> 8))) >> 8;
+   uint8_t t = (value * (255 - ((saturation * (255 - remainder)) >> 8))) >> 8;
+
+   switch(region)
+   {
+      case 0:
+         rgbOut.red = hsvIn.value;
+         rgbOut.green = t;
+         rgbOut.blue = p;
+         break;
+      case 1:
+         rgbOut.red = q;
+         rgbOut.green = hsvIn.value;
+         rgbOut.blue = p;
+         break;
+      case 2:
+         rgbOut.red = p;
+         rgbOut.green = hsvIn.value;
+         rgbOut.blue = t;
+         break;
+      case 3:
+         rgbOut.red = p;
+         rgbOut.green = q;
+         rgbOut.blue = hsvIn.value;
+         break;
+      case 4:
+         rgbOut.red = t;
+         rgbOut.green = p;
+         rgbOut.blue = hsvIn.value;
+         break;
+      default:
+         rgbOut.red = hsvIn.value;
+         rgbOut.green = p;
+         rgbOut.blue = q;
+         break;
+   }
+
+   return rgbOut;
 }
-
-/*
-rgb hsv2rgb(hsv in)
-{
-    double      hh, p, q, t, ff;
-    long        i;
-    rgb         out;
-
-    if(in.s <= 0.0) {       // < is bogus, just shuts up warnings
-        out.r = in.v;
-        out.g = in.v;
-        out.b = in.v;
-        return out;
-    }
-    hh = in.h;
-    if(hh >= 360.0) hh = 0.0;
-    hh /= 60.0;
-    i = (long)hh;
-    ff = hh - i;
-    p = in.v * (1.0 - in.s);
-    q = in.v * (1.0 - (in.s * ff));
-    t = in.v * (1.0 - (in.s * (1.0 - ff)));
-
-    switch(i) {
-    case 0:
-        out.r = in.v;
-        out.g = t;
-        out.b = p;
-        break;
-    case 1:
-        out.r = q;
-        out.g = in.v;
-        out.b = p;
-        break;
-    case 2:
-        out.r = p;
-        out.g = in.v;
-        out.b = t;
-        break;
-
-    case 3:
-        out.r = p;
-        out.g = q;
-        out.b = in.v;
-        break;
-    case 4:
-        out.r = t;
-        out.g = p;
-        out.b = in.v;
-        break;
-    case 5:
-    default:
-        out.r = in.v;
-        out.g = p;
-        out.b = q;
-        break;
-    }
-    return out;     
-}
-*/
