@@ -9,6 +9,7 @@
 #include "hardware/clocks.h"
 
 #include "util.h"
+#include "Color.h"
 #include "Encoder.h"
 #include "Heartbeat.h"
 #include "RgbLed.h"
@@ -48,31 +49,34 @@ static void encoderRotateCallback(void *context, Encoder_Event_t event)
       return;
    }
 
+   static uint16_t hue = 0;
+
    if(event == Encoder_Event_RotateCW) {
-      uart_puts(UART_ID, "Encoder Rotate CW\r\n");
+      // uart_puts(UART_ID, "Encoder Rotate CW\r\n");
+      hue += 5;
    } else if (event == Encoder_Event_RotateCCW) {
-      uart_puts(UART_ID, "Encoder Rotate CCW\r\n");
+      // uart_puts(UART_ID, "Encoder Rotate CCW\r\n");
+      hue -= 5;
    } else {
       uart_puts(UART_ID, "Unknown Rotate Event!\r\n");
    }
 
-   static uint8_t index = 0;
+   hue %= 360;
 
-   switch(index)
+   HsvColor_t hsv =
    {
-      case 0:
-         RgbLed_Write(&rgbLed, (RgbColor_t){255, 0, 0});
-         break;
-      case 1:
-         RgbLed_Write(&rgbLed, (RgbColor_t){0, 255, 0});
-         break;
-      default:
-         RgbLed_Write(&rgbLed, (RgbColor_t){0, 0, 255});
-         break;
-   }
+      .hue = hue,
+      .saturation = 100,
+      .value = 100
+   };
 
-   index++;
-   index %= 3;
+   RgbColor_t rgb = Color_HsvToRgb(hsv);
+
+   char myStr[40];
+   sprintf(myStr, "Hue %3d  R %3d G %3d B %3d\r\n", hue, rgb.red, rgb.green, rgb.blue);
+   uart_puts(UART_ID, myStr);
+
+   RgbLed_Write(&rgbLed, rgb);
 }
 
 static void encoderButtonCallback(void *context, Encoder_Event_t event)

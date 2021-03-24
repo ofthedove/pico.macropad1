@@ -1,7 +1,21 @@
 #include "pico/stdlib.h"
 #include "hardware/gpio.h"
+#include "hardware/pwm.h"
 
 #include "RgbLed.h"
+
+enum
+{
+   PwmTop = 255,
+};
+
+static void ConfigurePwm(uint8_t pin)
+{
+   gpio_set_function(pin, GPIO_FUNC_PWM);
+   uint8_t sliceNum = pwm_gpio_to_slice_num(pin);
+   pwm_set_wrap(sliceNum, PwmTop);
+   pwm_set_enabled(sliceNum, true);
+}
 
 void RgbLed_Init(RgbLed_t *instance, uint8_t redPin, uint8_t greenPin, uint8_t bluePin)
 {
@@ -9,22 +23,14 @@ void RgbLed_Init(RgbLed_t *instance, uint8_t redPin, uint8_t greenPin, uint8_t b
    instance->greenPin = greenPin;
    instance->bluePin = bluePin;
 
-   gpio_init(redPin);
-   gpio_set_dir(redPin, GPIO_OUT);
-   gpio_put(redPin, false);
-
-   gpio_init(greenPin);
-   gpio_set_dir(greenPin, GPIO_OUT);
-   gpio_put(greenPin, false);
-
-   gpio_init(bluePin);
-   gpio_set_dir(bluePin, GPIO_OUT);
-   gpio_put(bluePin, false);
+   ConfigurePwm(redPin);
+   ConfigurePwm(greenPin);
+   ConfigurePwm(bluePin);
 }
 
 void RgbLed_Write(RgbLed_t *instance, RgbColor_t color)
 {
-   gpio_put(instance->redPin, (color.red >= 128));
-   gpio_put(instance->greenPin, (color.green >= 128));
-   gpio_put(instance->bluePin, (color.blue >= 128));
+   pwm_set_gpio_level(instance->redPin, color.red);
+   pwm_set_gpio_level(instance->greenPin, color.green);
+   pwm_set_gpio_level(instance->bluePin, color.blue);
 }

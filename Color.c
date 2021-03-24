@@ -10,7 +10,7 @@ enum
    NumRegions = 6,
 };
 
-HsvColor_t ColorRgbToHsv(RgbColor_t rgbIn)
+HsvColor_t Color_RgbToHsv(RgbColor_t rgbIn)
 {
    HsvColor_t hsvOut;
 
@@ -59,7 +59,7 @@ HsvColor_t ColorRgbToHsv(RgbColor_t rgbIn)
    return hsvOut;
 }
 
-RgbColor_t ColorHsvToRgb(HsvColor_t hsvIn)
+RgbColor_t Color_HsvToRgb(HsvColor_t hsvIn)
 {
    RgbColor_t rgbOut;
 
@@ -67,14 +67,14 @@ RgbColor_t ColorHsvToRgb(HsvColor_t hsvIn)
    {
       rgbOut.red = hsvIn.value;
       rgbOut.green = hsvIn.value;
-      rgbOut.blue = hsvIn.value
+      rgbOut.blue = hsvIn.value;
       return rgbOut;
    }
 
    uint16_t hue = hsvIn.hue;
    hue %= HueMax;
    uint8_t region = hue / RegionSize;
-   uint16_t remainder = (hsvIn.hue - (region * regionSize)) * NumRegions;
+   uint16_t remainder = (hsvIn.hue - (region * RegionSize)) * NumRegions;
 
    uint16_t value = (uint16_t)hsvIn.value;
    uint16_t saturation = (uint16_t)hsvIn.saturation;

@@ -21,6 +21,7 @@ pico_sdk_init()
 
 add_executable(
         MacroPad1 MacroPad1.c
+        Color Color.c
         Encoder Encoder.c
         Heartbeat Heartbeat.c
         RgbLed RgbLed.c
@@ -41,6 +42,7 @@ target_link_libraries(MacroPad1
         hardware_pio
         hardware_timer
         hardware_clocks
+        hardware_pwm
         )
 
 pico_add_extra_outputs(MacroPad1)

@@ -17,8 +17,8 @@ typedef struct
    uint8_t value;
 } HsvColor_t;
 
-HsvColor_t ColorRgbToHsv(RgbColor_t rgbColor);
+HsvColor_t Color_RgbToHsv(RgbColor_t rgbColor);
 
-RgbColor_t ColorHsvToRgb(HsvColor_t hsvColor);
+RgbColor_t Color_HsvToRgb(HsvColor_t hsvColor);
 
 #endif
