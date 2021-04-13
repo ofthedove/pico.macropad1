@@ -79,6 +79,20 @@ static void encoderRotateCallback(void *context, Encoder_Event_t event)
    RgbLed_Write(&rgbLed, rgb);
 }
 
+static bool pollButton(repeating_timer_t *rt)
+{
+   IGNORE(rt);
+
+   bool newValue = gpio_get(8);
+   if(!newValue)
+   {
+      RgbColor_t rgb = {0, 0, 0};
+      RgbLed_Write(&rgbLed, rgb);
+   }
+
+   return true;
+}
+
 static void encoderButtonCallback(void *context, Encoder_Event_t event)
 {
    IGNORE(context);
@@ -112,6 +126,13 @@ int main()
    // gpio_pull_up(I2C_SCL);
 
    uart_puts(UART_ID, "Hello, world!\r\n");
+
+
+   gpio_init(8);
+   gpio_set_dir(8, GPIO_IN);
+   gpio_pull_up(8);
+   repeating_timer_t timer;
+   add_repeating_timer_ms(50, pollButton, NULL, &timer);
 
 
    Heartbeat_t heartbeat;
