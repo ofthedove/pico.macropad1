@@ -13,6 +13,7 @@
 #include "Encoder.h"
 #include "Heartbeat.h"
 #include "RgbLed.h"
+#include "Switches.h"
 
 // UART defines
 // By default the stdout UART is `uart0`, so we will use the second one
@@ -36,6 +37,7 @@ enum {
 };
 
 RgbLed_t rgbLed;
+bool rgbBlocked = false;
 
 static void encoderRotateCallback(void *context, Encoder_Event_t event)
 {
@@ -45,6 +47,11 @@ static void encoderRotateCallback(void *context, Encoder_Event_t event)
    static bool toggle;
    toggle = !toggle;
    if(toggle)
+   {
+      return;
+   }
+
+   if(rgbBlocked)
    {
       return;
    }
@@ -79,18 +86,26 @@ static void encoderRotateCallback(void *context, Encoder_Event_t event)
    RgbLed_Write(&rgbLed, rgb);
 }
 
-static bool pollButton(repeating_timer_t *rt)
+static void switchesCallback(void *context, Switch_Event_t event, Switches_SwitchName_t buttonName)
 {
-   IGNORE(rt);
+   IGNORE(context);
 
-   bool newValue = gpio_get(8);
-   if(!newValue)
+   switch(buttonName)
    {
-      RgbColor_t rgb = {0, 0, 0};
-      RgbLed_Write(&rgbLed, rgb);
-   }
+      case Switch_Button1:
+         if(event == Switch_Event_Press)
+         {
+            RgbColor_t rgb = {0, 0, 0};
+            RgbLed_Write(&rgbLed, rgb);
 
-   return true;
+            rgbBlocked = true;
+         }
+         else if(event == Switch_Event_Release)
+         {
+            rgbBlocked = false;
+         }
+         break;
+   }
 }
 
 static void encoderButtonCallback(void *context, Encoder_Event_t event)
@@ -128,13 +143,6 @@ int main()
    uart_puts(UART_ID, "Hello, world!\r\n");
 
 
-   gpio_init(8);
-   gpio_set_dir(8, GPIO_IN);
-   gpio_pull_up(8);
-   repeating_timer_t timer;
-   add_repeating_timer_ms(50, pollButton, NULL, &timer);
-
-
    Heartbeat_t heartbeat;
    Heartbeat_Init(&heartbeat, BuiltinLed);
 
@@ -150,6 +158,8 @@ int main()
       NULL,
       encoderButtonCallback,
       NULL);
+
+   Switches_Init(switchesCallback, NULL);
 
    while(true) {
       Encoder_Run(&encoder);

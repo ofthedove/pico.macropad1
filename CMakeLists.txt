@@ -25,6 +25,7 @@ add_executable(
         Encoder Encoder.c
         Heartbeat Heartbeat.c
         RgbLed RgbLed.c
+        Switches Switches.c
         )
 
 pico_set_program_name(MacroPad1 "MacroPad1")
