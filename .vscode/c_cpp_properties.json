@@ -1,17 +1,17 @@
 {
-  "configurations": [
-    {
-      "name": "Linux",
-      "includePath": [
-        "${workspaceFolder}/**",
-        "${env:PICO_SDK_PATH}/**"
-      ],
-      "defines": [],
-      "compilerPath": "/usr/bin/arm-none-eabi-gcc",
-      "cStandard": "gnu17",
-      "cppStandard": "gnu++14",
-      "intelliSenseMode": "gcc-arm"
-    }
-  ],
-  "version": 4
+    "configurations": [
+        {
+            "name": "GCC_ARM",
+            "includePath": [
+                "${workspaceFolder}/**",
+                "${env:PICO_SDK_PATH}/**"
+            ],
+            "defines": [],
+            "compilerPath": "/Users/andrewcombs/GCC_ARM_Toolchain/gcc-arm-none-eabi-8-2019-q3-update/bin/arm-none-eabi-gcc",
+            "cStandard": "gnu17",
+            "cppStandard": "gnu++14",
+            "intelliSenseMode": "gcc-arm"
+        }
+    ],
+    "version": 4
 }
